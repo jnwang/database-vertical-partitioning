@@ -6,27 +6,14 @@ import db.schema.entity.Range;
 import db.schema.entity.Workload;
 import db.schema.utils.zipf.ZipfDistributionFromGrayEtAl;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class BenchmarkWorkloads {
-
-    /*Begin Debugging Begin*/
-    public static Workload tpchAll(List<Attribute> attributes, double scaleFactor){
-        Workload w = new Workload(attributes, (long)(scaleFactor * 6000000), "ALL");
-        w.addProjectionQuery("A1", 1, 19, 6, 16, 5, 4, 1, 9);
-        w.addProjectionQuery("A2", 1, 13, 28, 12, 5, 15, 4, 16);
-        w.addProjectionQuery("A3", 1, 4, 5, 7, 9);
-        w.addProjectionQuery("A4", 1, 27, 14, 25, 24);
-        w.addProjectionQuery("A5", 1, 3, 17, 8, 11, 9);
-        w.addProjectionQuery("A6", 1, 23, 22, 20, 26);
-        w.addProjectionQuery("A7", 1, 10, 7, 22, 21, 20, 11, 4);
-        w.addProjectionQuery("A8", 1, 14, 30, 29);
-        w.addProjectionQuery("A9", 1, 3, 14, 8, 30, 18);
-        w.addProjectionQuery("A10", 1, 2, 0);
-
-        return w;
-    }
-    /*End Debuging End*/
 
 	public static Workload tpchCustomer(List<Attribute> attributes, double scaleFactor){
 		Workload w = new Workload(attributes, (long)(scaleFactor * 150000), "CUSTOMER");
@@ -41,7 +28,42 @@ public class BenchmarkWorkloads {
 		
 		return w;
 	}
-	
+
+
+
+    public static Workload tpchAll(List<Attribute> attributes, double scaleFactor){
+        Workload w = new Workload(attributes, (long)(scaleFactor * 6000000), "ALL");
+        w.addProjectionQuery("A1", 1, 19, 6, 16, 5, 4, 1, 9);
+        w.addProjectionQuery("A2", 1, 13, 28, 12, 5, 15, 4, 16);
+        w.addProjectionQuery("A3", 1, 4, 5, 7, 9);
+        w.addProjectionQuery("A4", 1, 27, 14, 25, 24);
+        w.addProjectionQuery("A5", 1, 3, 17, 8, 11, 9);
+        w.addProjectionQuery("A6", 1, 23, 22, 20, 26);
+        w.addProjectionQuery("A7", 1, 10, 7, 22, 21, 20, 5, 11, 4);
+        w.addProjectionQuery("A8", 1, 14, 30, 29);
+        w.addProjectionQuery("A9", 1, 3, 14, 8, 30, 18);
+        w.addProjectionQuery("A10", 1, 2, 0);
+
+        return w;
+    }
+
+    public static Workload bigbench(List<Attribute> attributes, double scaleFactor,  Map<String, List<Integer>> queryAttrs){
+
+        Workload w = new Workload(attributes, (long)(scaleFactor * 1000000), "bigbench");
+
+        for (Map.Entry<String, List<Integer>> entry : queryAttrs.entrySet()) {
+            String key = entry.getKey();
+            List<Integer> value = entry.getValue();
+            int[] newvalue = new int[value.size()];
+            int i = 0;
+            for (Integer e : value)
+                newvalue[i++] = e.intValue();
+            w.addProjectionQuery(key, 1, newvalue);
+            // ...
+        }
+        return w;
+    }
+
 	public static Workload tpchLineitem(List<Attribute> attributes, double scaleFactor){
 		Workload w = new Workload(attributes, (long)(scaleFactor * 6000000), "LINEITEM");
 		w.addProjectionQuery("Q1", 1, new int[]{10}, 9.90E-01, 4,5,6,7,8,9,10);

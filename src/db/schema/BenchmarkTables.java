@@ -4,6 +4,7 @@ import core.config.DataConfig;
 import db.schema.entity.Attribute;
 import db.schema.entity.Query;
 import db.schema.entity.Table;
+import db.schema.entity.Workload;
 import db.schema.types.AttributeType;
 import db.schema.types.TableType;
 import db.schema.utils.AttributeUtils;
@@ -15,13 +16,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class BenchmarkTables {
-	public static enum Type {TPC_H_CUSTOMER, TPC_H_LINEITEM, TPC_H_ORDERS, TPC_H_PART, TPC_H_PARTSUPP, TPC_H_SUPPLIER, TPC_H_NATION, TPC_H_REGION}
+	public static enum Type {TPC_H_CUSTOMER, TPC_H_LINEITEM, TPC_H_ORDERS, TPC_H_PART, TPC_H_PARTSUPP, TPC_H_SUPPLIER, TPC_H_NATION, TPC_H_REGION, TPC_H_ALL}
 	
 	public static class BenchmarkConfig {
 		private String dataFileDir;
@@ -53,7 +51,65 @@ public class BenchmarkTables {
 		}
 	}
 
-    /*Begin Debugging Begin*/
+	public static Table tpchCustomer(BenchmarkConfig conf){
+		Attribute custKey = new Attribute("c_CustKey", AttributeType.Integer());
+		custKey.primaryKey = true;
+		
+		Attribute name = new Attribute("c_Name", AttributeType.CharacterVarying(25));
+		Attribute address = new Attribute("c_Address", AttributeType.CharacterVarying(40));
+		Attribute nationKey = new Attribute("c_NationKey", AttributeType.Integer());
+		Attribute phone = new Attribute("c_Phone", AttributeType.Character(15));
+		Attribute acctBal = new Attribute("c_AcctBal", AttributeType.Real());
+		Attribute mktSegment = new Attribute("c_MktSegment", AttributeType.Character(10));
+		Attribute comment = new Attribute("c_Comment", AttributeType.CharacterVarying(117));
+		
+		List<Attribute> attributes = new ArrayList<Attribute>();
+		attributes.add(custKey);
+		attributes.add(name);
+		attributes.add(address);
+		attributes.add(nationKey);
+		attributes.add(phone);
+		attributes.add(acctBal);
+		attributes.add(mktSegment);
+		attributes.add(comment);
+		
+		Table t = new Table("customer", conf.getTableType(), attributes);
+        t.pk = "c_CustKey";
+		t.workload = BenchmarkWorkloads.tpchCustomer(attributes, conf.getScaleFactor());
+		t.workload.dataFileName = conf.getDataFileDir() + "customer.tbl";
+		return t;
+	}
+
+	public static Table tpchLineitem(BenchmarkConfig conf){
+		
+		List<Attribute> attributes = new ArrayList<Attribute>();
+		
+		attributes.add(new Attribute("l_OrderKey", AttributeType.Integer()));
+		attributes.add(new Attribute("l_PartKey", AttributeType.Integer()));
+		attributes.add(new Attribute("l_SuppKey", AttributeType.Integer()));
+		attributes.add(new Attribute("l_Linenumber", AttributeType.Integer()));
+		attributes.add(new Attribute("l_Quantity", AttributeType.Real()));
+		attributes.add(new Attribute("l_ExtendedPrice", AttributeType.Real()));
+		attributes.add(new Attribute("l_Discount", AttributeType.Real()));
+		attributes.add(new Attribute("l_Tax", AttributeType.Real()));
+		attributes.add(new Attribute("l_ReturnFlag", AttributeType.Character(1)));
+		attributes.add(new Attribute("l_LineStatus", AttributeType.Character(1)));
+		attributes.add(new Attribute("l_ShipDate", AttributeType.Date("yyyy-MM-dd")));
+		attributes.add(new Attribute("l_CommitDate", AttributeType.Date("yyyy-MM-dd")));
+		attributes.add(new Attribute("l_ReceiptDate", AttributeType.Date("yyyy-MM-dd")));
+		attributes.add(new Attribute("l_ShipInstruct", AttributeType.Character(25)));
+		attributes.add(new Attribute("l_ShipMode", AttributeType.Character(10)));
+		attributes.add(new Attribute("l_Comment", AttributeType.CharacterVarying(44)));
+
+
+		
+		Table t = new Table("lineitem", conf.getTableType(), attributes);
+		t.pk = "l_OrderKey,l_Linenumber";
+		t.workload = BenchmarkWorkloads.tpchLineitem(attributes, conf.getScaleFactor());
+		t.workload.dataFileName = conf.getDataFileDir() + "lineitem.tbl";
+
+		return t;
+	}
 
     public static Table tpchAll(BenchmarkConfig conf){
 
@@ -163,64 +219,35 @@ public class BenchmarkTables {
         System.out.println(t.workload.dataFileName);
         return t;
     }
-    /*End Debugging End*/
 
-	public static Table tpchCustomer(BenchmarkConfig conf){
-		Attribute custKey = new Attribute("c_CustKey", AttributeType.Integer());
-		custKey.primaryKey = true;
-		
-		Attribute name = new Attribute("c_Name", AttributeType.CharacterVarying(25));
-		Attribute address = new Attribute("c_Address", AttributeType.CharacterVarying(40));
-		Attribute nationKey = new Attribute("c_NationKey", AttributeType.Integer());
-		Attribute phone = new Attribute("c_Phone", AttributeType.Character(15));
-		Attribute acctBal = new Attribute("c_AcctBal", AttributeType.Real());
-		Attribute mktSegment = new Attribute("c_MktSegment", AttributeType.Character(10));
-		Attribute comment = new Attribute("c_Comment", AttributeType.CharacterVarying(117));
-		
-		List<Attribute> attributes = new ArrayList<Attribute>();
-		attributes.add(custKey);
-		attributes.add(name);
-		attributes.add(address);
-		attributes.add(nationKey);
-		attributes.add(phone);
-		attributes.add(acctBal);
-		attributes.add(mktSegment);
-		attributes.add(comment);
-		
-		Table t = new Table("customer", conf.getTableType(), attributes);
-        t.pk = "c_CustKey";
-		t.workload = BenchmarkWorkloads.tpchCustomer(attributes, conf.getScaleFactor());
-		t.workload.dataFileName = conf.getDataFileDir() + "customer.tbl";
-		return t;
-	}
+    public static Table bigbench(BenchmarkConfig conf, Map<String, List<Integer>> queryAttrs){
 
-	public static Table tpchLineitem(BenchmarkConfig conf){
-		
-		List<Attribute> attributes = new ArrayList<Attribute>();
-		
-		attributes.add(new Attribute("l_OrderKey", AttributeType.Integer()));
-		attributes.add(new Attribute("l_PartKey", AttributeType.Integer()));
-		attributes.add(new Attribute("l_SuppKey", AttributeType.Integer()));
-		attributes.add(new Attribute("l_Linenumber", AttributeType.Integer()));
-		attributes.add(new Attribute("l_Quantity", AttributeType.Real()));
-		attributes.add(new Attribute("l_ExtendedPrice", AttributeType.Real()));
-		attributes.add(new Attribute("l_Discount", AttributeType.Real()));
-		attributes.add(new Attribute("l_Tax", AttributeType.Real()));
-		attributes.add(new Attribute("l_ReturnFlag", AttributeType.Character(1)));
-		attributes.add(new Attribute("l_LineStatus", AttributeType.Character(1)));
-		attributes.add(new Attribute("l_ShipDate", AttributeType.Date("yyyy-MM-dd")));
-		attributes.add(new Attribute("l_CommitDate", AttributeType.Date("yyyy-MM-dd")));
-		attributes.add(new Attribute("l_ReceiptDate", AttributeType.Date("yyyy-MM-dd")));
-		attributes.add(new Attribute("l_ShipInstruct", AttributeType.Character(25)));
-		attributes.add(new Attribute("l_ShipMode", AttributeType.Character(10)));
-		attributes.add(new Attribute("l_Comment", AttributeType.CharacterVarying(44)));
-		
-		Table t = new Table("lineitem", conf.getTableType(), attributes);
-		t.pk = "l_OrderKey,l_Linenumber";
-		t.workload = BenchmarkWorkloads.tpchLineitem(attributes, conf.getScaleFactor());
-		t.workload.dataFileName = conf.getDataFileDir() + "lineitem.tbl";
-		return t;
-	}
+        List<Attribute> attributes = new ArrayList<Attribute>();
+
+        attributes.add(new Attribute("pageURL", AttributeType.CharacterVarying(300)));
+        attributes.add(new Attribute("pageRank", AttributeType.Integer()));
+        attributes.add(new Attribute("avgDuration", AttributeType.Integer()));
+        attributes.add(new Attribute("sourceIP", AttributeType.CharacterVarying(116)));
+        attributes.add(new Attribute("visitDate", AttributeType.Date("yyyy-MM-dd")));
+        attributes.add(new Attribute("adRevenue", AttributeType.Real()));
+        attributes.add(new Attribute("userAgent", AttributeType.CharacterVarying(256)));
+        attributes.add(new Attribute("countryCode", AttributeType.Character(3)));
+        attributes.add(new Attribute("languageCode", AttributeType.Character(6)));
+        attributes.add(new Attribute("searchWord", AttributeType.CharacterVarying(32)));
+        attributes.add(new Attribute("duration", AttributeType.Integer()));
+
+
+        Table t = new Table("bigbench", conf.getTableType(), attributes);
+        t.pk = "pageURL,sourceIP,visitDate";
+
+
+
+        t.workload = BenchmarkWorkloads.bigbench(attributes, conf.getScaleFactor(), queryAttrs);
+        t.workload.dataFileName = conf.getDataFileDir() + "bigbench.tbl";
+
+        System.out.println(t.workload.dataFileName);
+        return t;
+    }
 	
 	public static Table tpchPart(BenchmarkConfig conf){
 		

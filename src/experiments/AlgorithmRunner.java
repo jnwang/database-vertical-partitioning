@@ -3,11 +3,15 @@ package experiments;
 import core.algo.vertical.*;
 import core.config.DataConfig;
 import db.schema.BenchmarkTables;
+import db.schema.entity.Attribute;
 import db.schema.entity.Table;
-import org.junit.Test;
+import db.schema.entity.Workload;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
 
 import static core.algo.vertical.AbstractAlgorithm.Algo.*;
 
@@ -123,25 +127,19 @@ public class AlgorithmRunner {
      * Method for running the experiment for all TPC-H tables.
      */
     public void runTPC_H_Tables() {
-        runTPC_H_Customer();
+        /*runTPC_H_Customer();
         runTPC_H_LineItem(true);
         runTPC_H_Orders();
         runTPC_H_Supplier();
         runTPC_H_Part();
         runTPC_H_PartSupp();
         runTPC_H_Nation();
-        runTPC_H_Region();
-    }
+        runTPC_H_Region();*/
 
-    /*Begin Debugging Begin*/
-    public void runTPC_H_All() {
-        Table table = BenchmarkTables.partialTable(BenchmarkTables.tpchAll(benchmarkConf), null, querySet);
-        config.setTable(table);
-        //runAlgorithms(config, lineitemCGrpThreshold);
-        runAlgorithms(config, generalCGrpThreshold);
+        runTPC_H_All();
 
     }
-    /*End Debugging End*/
+
 
 
     /**
@@ -164,6 +162,22 @@ public class AlgorithmRunner {
         RUN_OPTIMAL = runOptimal;
         runAlgorithms(config, lineitemCGrpThreshold);
         RUN_OPTIMAL = true;
+    }
+
+    public void runTPC_H_All() {
+        Table table = BenchmarkTables.partialTable(BenchmarkTables.tpchAll(benchmarkConf), null, querySet);
+        config.setTable(table);
+        //runAlgorithms(config, lineitemCGrpThreshold);
+        runAlgorithms(config, generalCGrpThreshold);
+
+    }
+
+    public void runBigBench(Map<String, List<Integer>> queryAttrs) {
+        Table table = BenchmarkTables.partialTable(BenchmarkTables.bigbench(benchmarkConf, queryAttrs), null, querySet);
+        config.setTable(table);
+        //runAlgorithms(config, lineitemCGrpThreshold);
+        runAlgorithms(config, generalCGrpThreshold);
+
     }
 
     /**
@@ -438,21 +452,52 @@ public class AlgorithmRunner {
 
         return algorithm;
     }
+    private  static Map<String, List<Integer>> loadQueries(String filename){
+        Map<String, List<Integer>> queryAttrs = new HashMap<String, List<Integer>>();
+        List<String> attributes = Arrays.asList("pageURL", "pageRank", "avgDuration", "sourceIP", "visitDate", "adRevenue", "userAgent", "countryCode", "languageCode", "searchWord", "duration");
+        try{
+            BufferedReader br = new BufferedReader(new FileReader(filename));
+            String line;
+            Integer queryid = 0;
+            while ((line = br.readLine()) != null) {
+                Integer i = 0;
+                List<Integer> usedAttrs = new ArrayList<Integer>();
+                for (String attr: attributes){
+                    if (line.indexOf(attr) != -1) {
+                        usedAttrs.add(i);
+                    }
+                    i += 1;
+                }
+                queryAttrs.put("Q"+queryid.toString(), usedAttrs);
+                queryid += 1;
+            }
 
-    /*Begin Debugging Begin*/
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return queryAttrs;
+    }
     public static void main(String[] args) {
-        String[] queries = {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"};
+        String filename = "query10";
+        //String filename = args[1];
+        Map<String, List<Integer>> queryAttrs = loadQueries(filename);
+
+        String[] queries = queryAttrs.keySet().toArray(new String[queryAttrs.size()]);
+
         Set<AbstractAlgorithm.Algo> algos_sel = new HashSet<AbstractAlgorithm.Algo>();
-        //AbstractAlgorithm.Algo[] ALL_ALGOS_SEL = {AUTOPART, HILLCLIMB, HYRISE};
-        AbstractAlgorithm.Algo[] ALL_ALGOS_SEL = {TROJAN};
+        AbstractAlgorithm.Algo[] ALL_ALGOS_SEL = {HILLCLIMB, HYRISE, H2P};
         for (AbstractAlgorithm.Algo algo : ALL_ALGOS_SEL) {
             algos_sel.add(algo);
         }
         AlgorithmRunner algoRunner = new AlgorithmRunner(algos_sel, 10, queries, new AbstractAlgorithm.HDDAlgorithmConfig(BenchmarkTables.randomTable(1, 1)));
-        algoRunner.runTPC_H_All();
+        algoRunner.runBigBench(queryAttrs);
         String output = AlgorithmResults.exportResults(algoRunner.results);
 
         System.out.println(output);
+
+
     }
-    /*End Debugging End*/
 }

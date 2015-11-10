@@ -1,0 +1,10 @@
+select avgDuration, visitDate, pageRank from bigbench where avgDuration = 29;
+select languageCode,duration from bigbench where avgDuration=57;
+select languageCode,pageRank from bigbench where pageURL='ydckzaxqailzhlveucekjveazutrpoqxybxgacatcqccclukptmunytmostmhjyyhppyccghxwtyeipsl';
+select languageCode,pageRank from bigbench where pageURL='jhyxeotcfiibhtcbuqugkrnzshokkjxjifftxkjwzylscsqxhadncjeqptkydsuwhoegkdhgqbaxhzwqfvfedultcumw';
+select pageRank,duration from bigbench where pageRank=1920;
+select languageCode,pageRank from bigbench where userAgent='Djjtkfjakd/3.1';
+select pageRank,languageCode from bigbench where avgDuration=7;
+select languageCode,pageRank from bigbench where visitDate='1990-08-08';
+select pageRank,languageCode from bigbench where avgDuration=21;
+select pageRank,languageCode from bigbench where userAgent='Gblukxvtjaq/2.5';
